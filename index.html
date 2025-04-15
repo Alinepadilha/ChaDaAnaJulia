@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmação de Presença - Organizador</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Gestão de Convidados</h1>
+    <div class="cadastro">
+      <h2>Cadastrar Convidado</h2>
+      <form id="formCadastro">
+        <label for="nome">Nome do Convidado:</label>
+        <input type="text" id="nome" required>
+        <label for="whatsapp">WhatsApp:</label>
+        <input type="text" id="whatsapp" required>
+        <button type="submit">Cadastrar</button>
+      </form>
+    </div>
+    <div class="lista-convidados">
+      <h2>Convidados Confirmados</h2>
+      <table id="listaConvidados">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>WhatsApp</th>
+            <th>Status</th>
+            <th>Familiares</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    const formCadastro = document.getElementById('formCadastro');
+    const listaConvidados = document.querySelector('#listaConvidados tbody');
+
+    formCadastro.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nome = document.getElementById('nome').value;
+      const whatsapp = document.getElementById('whatsapp').value;
+      fetch('/api/cadastrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, whatsapp })
+      })
+        .then(res => res.json())
+        .then(() => {
+          listarConvidados();
+          formCadastro.reset();
+        });
+    });
+
+    function excluirConvidado(nome) {
+      fetch('/api/convidado/' + encodeURIComponent(nome), {
+        method: 'DELETE'
+      })
+      .then(() => listarConvidados());
+    }
+
+    function listarConvidados() {
+      fetch('/api/convidados')
+        .then(res => res.json())
+        .then(convidados => {
+          listaConvidados.innerHTML = '';
+          convidados.forEach(c => {
+            const row = listaConvidados.insertRow();
+            row.innerHTML = `
+              <td>${c.nome}</td>
+              <td>${c.whatsapp}</td>
+              <td>${c.status}</td>
+              <td>${(c.familiares || []).join(', ')}</td>
+              <td>
+                <a href="guest.html?nome=${encodeURIComponent(c.nome)}&whatsapp=${encodeURIComponent(c.whatsapp)}" target="_blank">Link</a> |
+                <button onclick="excluirConvidado('${c.nome}')">Excluir</button>
+              </td>
+            `;
+          });
+        });
+    }
+
+    listarConvidados();
+  </script>
+</body>
+</html>
